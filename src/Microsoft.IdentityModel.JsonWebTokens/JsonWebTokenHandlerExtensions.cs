@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.IdentityModel.Abstractions;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -16,16 +17,16 @@ namespace Microsoft.IdentityModel.JsonWebTokens
     public static class JsonWebTokenHandlerExtensions
     {
         /// <summary>
-        /// Validates a token synchronously with automatic retry logic similar to ValidateTokenAsync.
+        /// Validates a token asynchronously with automatic retry logic similar to ValidateTokenAsync.
         /// This method handles configuration retrieval, retries on recoverable errors, and Last Known Good (LKG) configuration fallback.
         /// </summary>
         /// <param name="handler">The <see cref="JsonWebTokenHandler"/> instance.</param>
         /// <param name="token">The token to be validated.</param>
         /// <param name="validationParameters">The <see cref="TokenValidationParameters"/> to be used for validating the token.</param>
-        /// <returns>A <see cref="TokenValidationResult"/>.</returns>
+        /// <returns>A <see cref="Task{TokenValidationResult}"/>.</returns>
         /// <remarks>
-        /// This extension method provides the same retry and LKG behavior as ValidateTokenAsync but in a synchronous manner.
-        /// The configuration is retrieved synchronously from the ConfigurationManager if present.
+        /// This extension method provides the same retry and LKG behavior as ValidateTokenAsync.
+        /// The configuration is retrieved asynchronously from the ConfigurationManager if present.
         /// On recoverable validation failures, the method will:
         /// <list type="number">
         /// <item>Request a configuration refresh and retry validation if a new configuration is available</item>
@@ -35,7 +36,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="handler"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="token"/> is null or empty.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="validationParameters"/> is null.</exception>
-        public static TokenValidationResult ValidateTokenWithRetry(
+        public static async Task<TokenValidationResult> ValidateTokenWithRetryAsync(
             this JsonWebTokenHandler handler,
             string token,
             TokenValidationParameters validationParameters)
@@ -65,7 +66,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens
                     };
                 }
 
-                return ValidateTokenWithRetry(handler, jsonWebToken, validationParameters);
+                return await ValidateTokenWithRetryAsync(handler, jsonWebToken, validationParameters).ConfigureAwait(false);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
@@ -80,16 +81,16 @@ namespace Microsoft.IdentityModel.JsonWebTokens
         }
 
         /// <summary>
-        /// Validates a JsonWebToken synchronously with automatic retry logic similar to ValidateTokenAsync.
+        /// Validates a JsonWebToken asynchronously with automatic retry logic similar to ValidateTokenAsync.
         /// This method handles configuration retrieval, retries on recoverable errors, and Last Known Good (LKG) configuration fallback.
         /// </summary>
         /// <param name="handler">The <see cref="JsonWebTokenHandler"/> instance.</param>
         /// <param name="jsonWebToken">The <see cref="JsonWebToken"/> to validate.</param>
         /// <param name="validationParameters">The <see cref="TokenValidationParameters"/> to be used for validating the token.</param>
-        /// <returns>A <see cref="TokenValidationResult"/>.</returns>
+        /// <returns>A <see cref="Task{TokenValidationResult}"/>.</returns>
         /// <remarks>
-        /// This extension method provides the same retry and LKG behavior as ValidateTokenAsync but in a synchronous manner.
-        /// The configuration is retrieved synchronously from the ConfigurationManager if present.
+        /// This extension method provides the same retry and LKG behavior as ValidateTokenAsync.
+        /// The configuration is retrieved asynchronously from the ConfigurationManager if present.
         /// On recoverable validation failures, the method will:
         /// <list type="number">
         /// <item>Request a configuration refresh and retry validation if a new configuration is available</item>
@@ -99,7 +100,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="handler"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="jsonWebToken"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="validationParameters"/> is null.</exception>
-        public static TokenValidationResult ValidateTokenWithRetry(
+        public static async Task<TokenValidationResult> ValidateTokenWithRetryAsync(
             this JsonWebTokenHandler handler,
             JsonWebToken jsonWebToken,
             TokenValidationParameters validationParameters)
@@ -120,9 +121,8 @@ namespace Microsoft.IdentityModel.JsonWebTokens
                 {
                     try
                     {
-                        // Synchronously get configuration - this will block if not cached
-                        currentConfiguration = validationParameters.ConfigurationManager.GetBaseConfigurationAsync(CancellationToken.None)
-                            .ConfigureAwait(false).GetAwaiter().GetResult();
+                        // Asynchronously get configuration
+                        currentConfiguration = await validationParameters.ConfigurationManager.GetBaseConfigurationAsync(CancellationToken.None).ConfigureAwait(false);
                     }
 #pragma warning disable CA1031 // Do not catch general exception types
                     catch (Exception ex)
@@ -161,8 +161,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens
                             validationParameters.ConfigurationManager.RequestRefresh();
                             validationParameters.RefreshBeforeValidation = true;
                             var lastConfig = currentConfiguration;
-                            currentConfiguration = validationParameters.ConfigurationManager.GetBaseConfigurationAsync(CancellationToken.None)
-                                .ConfigureAwait(false).GetAwaiter().GetResult();
+                            currentConfiguration = await validationParameters.ConfigurationManager.GetBaseConfigurationAsync(CancellationToken.None).ConfigureAwait(false);
 
                             // Only try to re-validate using the newly obtained config if it doesn't reference equal the previously used configuration.
                             if (lastConfig != currentConfiguration)

@@ -13,27 +13,27 @@ using Xunit;
 namespace Microsoft.IdentityModel.JsonWebTokens.Tests
 {
     /// <summary>
-    /// Tests for synchronous token validation extension methods with retry logic.
+    /// Tests for asynchronous token validation extension methods with retry logic.
     /// </summary>
     public class JsonWebTokenHandlerValidateTokenWithRetryTests
     {
         [Fact]
-        public void ValidateTokenWithRetry_NullHandler_ThrowsArgumentNullException()
+        public async Task ValidateTokenWithRetryAsync_NullHandler_ThrowsArgumentNullException()
         {
             JsonWebTokenHandler handler = null;
             var token = "******";
             var validationParameters = new TokenValidationParameters();
 
-            Assert.Throws<ArgumentNullException>(() => handler.ValidateTokenWithRetry(token, validationParameters));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => handler.ValidateTokenWithRetryAsync(token, validationParameters));
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_NullToken_ReturnsInvalid()
+        public async Task ValidateTokenWithRetryAsync_NullToken_ReturnsInvalid()
         {
             var handler = new JsonWebTokenHandler();
             var validationParameters = new TokenValidationParameters();
 
-            var result = handler.ValidateTokenWithRetry(null as string, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(null as string, validationParameters);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result.Exception);
@@ -41,12 +41,12 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_EmptyToken_ReturnsInvalid()
+        public async Task ValidateTokenWithRetryAsync_EmptyToken_ReturnsInvalid()
         {
             var handler = new JsonWebTokenHandler();
             var validationParameters = new TokenValidationParameters();
 
-            var result = handler.ValidateTokenWithRetry(string.Empty, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(string.Empty, validationParameters);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result.Exception);
@@ -54,12 +54,12 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_NullValidationParameters_ReturnsInvalid()
+        public async Task ValidateTokenWithRetryAsync_NullValidationParameters_ReturnsInvalid()
         {
             var handler = new JsonWebTokenHandler();
             var token = "******";
 
-            var result = handler.ValidateTokenWithRetry(token, null);
+            var result = await handler.ValidateTokenWithRetryAsync(token, null);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result.Exception);
@@ -67,7 +67,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_ValidToken_NoConfigManager_ReturnsValid()
+        public async Task ValidateTokenWithRetryAsync_ValidToken_NoConfigManager_ReturnsValid()
         {
             var handler = new JsonWebTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -91,7 +91,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
                 ValidateLifetime = false
             };
 
-            var result = handler.ValidateTokenWithRetry(token, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(token, validationParameters);
 
             Assert.True(result.IsValid);
             Assert.NotNull(result.SecurityToken);
@@ -99,7 +99,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_JsonWebToken_ValidToken_ReturnsValid()
+        public async Task ValidateTokenWithRetryAsync_JsonWebToken_ValidToken_ReturnsValid()
         {
             var handler = new JsonWebTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -124,7 +124,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
                 ValidateLifetime = false
             };
 
-            var result = handler.ValidateTokenWithRetry(jsonWebToken, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(jsonWebToken, validationParameters);
 
             Assert.True(result.IsValid);
             Assert.NotNull(result.SecurityToken);
@@ -132,12 +132,12 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_JsonWebToken_NullToken_ReturnsInvalid()
+        public async Task ValidateTokenWithRetryAsync_JsonWebToken_NullToken_ReturnsInvalid()
         {
             var handler = new JsonWebTokenHandler();
             var validationParameters = new TokenValidationParameters();
 
-            var result = handler.ValidateTokenWithRetry(null as JsonWebToken, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(null as JsonWebToken, validationParameters);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result.Exception);
@@ -145,7 +145,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_InvalidIssuer_ReturnsInvalid()
+        public async Task ValidateTokenWithRetryAsync_InvalidIssuer_ReturnsInvalid()
         {
             var handler = new JsonWebTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -169,7 +169,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
                 ValidateLifetime = false
             };
 
-            var result = handler.ValidateTokenWithRetry(token, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(token, validationParameters);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result.Exception);
@@ -177,7 +177,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_TokenTooLarge_ReturnsInvalid()
+        public async Task ValidateTokenWithRetryAsync_TokenTooLarge_ReturnsInvalid()
         {
             var handler = new JsonWebTokenHandler();
             var validationParameters = new TokenValidationParameters();
@@ -185,7 +185,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
             // Create a token that exceeds the maximum size
             var largeToken = new string('a', handler.MaximumTokenSizeInBytes + 1);
 
-            var result = handler.ValidateTokenWithRetry(largeToken, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(largeToken, validationParameters);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result.Exception);
@@ -193,7 +193,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
         }
 
         [Fact]
-        public void ValidateTokenWithRetry_WithConfigManager_ReturnsValid()
+        public async Task ValidateTokenWithRetryAsync_WithConfigManager_ReturnsValid()
         {
             var handler = new JsonWebTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -225,7 +225,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens.Tests
                 ConfigurationManager = configManager
             };
 
-            var result = handler.ValidateTokenWithRetry(token, validationParameters);
+            var result = await handler.ValidateTokenWithRetryAsync(token, validationParameters);
 
             Assert.True(result.IsValid);
             Assert.NotNull(result.SecurityToken);
